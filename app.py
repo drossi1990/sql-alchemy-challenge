@@ -29,7 +29,7 @@ def precipitation(year,month,day):
     return(prev_year)
 app = Flask(__name__)
 @app.route('/')
-def landing_pagea():
+def landing_page():
     return (
         f"------------------------------------------------------------------<br/>"
         f"Hawaii Weather Database API<br/>"
@@ -77,10 +77,10 @@ def landing_pagea():
         f"###########################'*****,###########################<br/>"
         f"##########################*******############################<br/>"
         f"#########################*******,############################<br/>"
-        f"########################********d###########P'*****`Y#########<br/>"
-        f"#######################********,############*********#########<br/>"
-        f"######################********,#############*********#########<br/>"
-        f"#####################********,##############b.*****,d#########<br/>"
+        f"########################********d###########P'******.`Y#########<br/>"
+        f"#######################********,############*********.#########<br/>"
+        f"######################********,#############*********.#########<br/>"
+        f"#####################********,##############b.******,d#########<br/>"
         f"####################********,################################<br/>"
         f"###################*********#################################<br/>"
         f"##################**********#######################P'  `V##P'<br/>"
@@ -92,8 +92,26 @@ def landing_pagea():
         f"#'*****************************`V##P'<br/>"
     )
 
-# @app.route('/api/v1.0/precipitation')
-# @app.route('/api/v1.0/stations')
+#Precipitation Module
+@app.route('/api/v1.0/precipitation')
+def Precipitation():
+    #calculate date 1 year before last date in the db
+    last = engine.execute('SELECT max(date) FROM measurement').fetchone()
+    Precipitation_1ya = ((dt.datetime.strptime(last[0], '%Y-%m-%d')) - dt.timedelta(days=365))
+    Precipitation_Data = this_session.query(measurements.date, measurements.prcp).filter(measurements.date >= Precipitation_1ya).order_by(measurements.date).all()
+    Precipitation_Output = {date: prcp for date, prcp in Precipitation_Data}
+    return jsonify(Precipitation_Output)
+
+#Station Module
+@app.route('/api/v1.0/stations')
+def Weather_Stations():
+    station_query = session.query(stations.station).all()
+
+    # Unravel results into a 1D array and convert to a list
+    station_list = list(np.ravel(station_query))
+    return jsonify(stations=stations)
+
+
 # @app.route('/api/v1.0/tobs')
 # @app.route('/api/v1.0/temp/<start>')
 # @app.route('/api/v1.0/temp/<start>/<end>')
