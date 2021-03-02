@@ -22,11 +22,6 @@ stations = Base.classes.station
 #instantiate session from Python to DB
 this_session = Session(engine)
 
-#function to calculate previous year dates for a given range
-def precipitation(year,month,day):
-    # Calculate the date 1 year ago from last date in database
-    prev_year = dt.date(year, month, day) - dt.timedelta(days=365)
-    return(prev_year)
 app = Flask(__name__)
 @app.route('/')
 def landing_page():
@@ -38,7 +33,8 @@ def landing_page():
         f"/api/v1.0/stations<br/>"
         f"/api/v1.0/tobs<br/>"
         f"/api/v1.0/temp/start<br/>"
-        f"/api/v1.0/temp/start+end<br/>"
+        f"/api/v1.0/temp/start_end<br/>"
+        f"TEMP Instructions, append Yr(xxxx)-Mo(xx)-Day(xx) to /api/v1.0/temp/ to see past weather for your trip dates!"
         f"------------------------------------------------------------------<br/>"
         f'"Just Another Day in Paradise!"<br/>'
         #Palm Tree ASCII art just for fun
@@ -105,16 +101,59 @@ def Precipitation():
 #Station Module
 @app.route('/api/v1.0/stations')
 def Weather_Stations():
-    station_query = session.query(stations.station).all()
+    station_query = this_session.query(stations.station, stations.name).all()
 
-    # Unravel results into a 1D array and convert to a list
-    station_list = list(np.ravel(station_query))
-    return jsonify(stations=stations)
+    # Converts query results into a list which can display on the page
+    station_list = []
+    for s in station_query:
+        query_dict = {}
+        query_dict['station'] = s.station
+        query_dict['name'] = s.name
+        station_list.append(query_dict)
+    return jsonify(station_list)
 
 
-# @app.route('/api/v1.0/tobs')
-# @app.route('/api/v1.0/temp/<start>')
-# @app.route('/api/v1.0/temp/<start>/<end>')
+@app.route('/api/v1.0/tobs')
+def tobs():
+   
+    last = engine.execute('SELECT max(date) FROM measurement').fetchone()
+    tobs_1ya = ((dt.datetime.strptime(last[0], '%Y-%m-%d')) - dt.timedelta(days=365))
+    tobs_query = this_session.query(measurements.date, measurements.tobs).filter(measurements.date >= tobs_1ya).all()
+    # Converts query results into a list which can display on the page
+    tobs_list = []
+    for t in tobs_query:
+        tobs_dict = {}
+        tobs_dict['tobs'] = t.tobs
+        tobs_dict['date'] = t.date
+        tobs_list.append(tobs_dict)
+        
+    return jsonify(tobs_list)
+
+@app.route('/api/v1.0/temp/<start>')
+def startdate_weather(start):
+    #takes startdate as input and returns min, max, and avg temps from startdate to end of record
+     startdate = (dt.datetime.strptime(start, '%Y-%m-%d') - dt.timedelta(days=365))
+     last = engine.execute('SELECT max(date) FROM measurement').fetchone()
+     enddate = dt.datetime.strptime(last[0], '%Y-%m-%d')
+     trip_data = this_session.query(func.min(measurements.tobs), func.max(measurements.tobs), func.avg(measurements.tobs)).\
+                                filter(measurements.date >= startdate).filter(measurements.date <= enddate).all()
+     labels = ["min", "max", "avg"]
+     temp_stats = {labels[i]: trip_data[0][i] for i in range(len(labels))} 
+
+     return jsonify(temp_stats)
+
+
+@app.route('/api/v1.0/temp/<start>/<end>')
+def startdate_enddate_weather(start,end):
+    #takes startdate as input and returns min, max, and avg temps from startdate to enddate
+     startdate = (dt.datetime.strptime(start, '%Y-%m-%d') - dt.timedelta(days=365))
+     enddate = (dt.datetime.strptime(end, '%Y-%m-%d') - dt.timedelta(days=365))
+     trip_data = this_session.query(func.min(measurements.tobs), func.max(measurements.tobs), func.avg(measurements.tobs)).\
+                                filter(measurements.date >= startdate).filter(measurements.date <= enddate).all()
+     labels = ["min", "max", "avg"]
+     temp_stats = {labels[i]: trip_data[0][i] for i in range(len(labels))} 
+
+     return jsonify(temp_stats)
 
 if __name__ == '__main__':
-    app.run()
+    app.run(debug=True)
