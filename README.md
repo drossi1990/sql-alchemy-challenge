@@ -1,8 +1,10 @@
-# sql-alchemy-challenge
-List of Commits:
+# web-scraping-homework
 1. Initial commit
-2. tables reflected into SQLalchemy ORM, session link established 
-3. Pandas dataframe created, rainfall by date plot added
-4. Top station data and histogram plot added
-5-12. Cleaning repo from accidentally copy and pasting files from another project
-13. bonus: added average temp chart 
+2. added initial jupyter notebook with dependency calls 
+3. retrieved news title and article teaser
+4. working webscraping code for news, facts, and data. Image TBD.
+5. update to image code, still not functional
+6. web scraping code complete
+7. converted jupyter notebook to app.py
+8. added flask app, news not displaying correctly in template
+9. Updated styling, fixed bug with news display, added png of final application
