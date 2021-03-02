@@ -10,3 +10,5 @@ List of Commits:
 15. added snazzy ASCII palm tree art
 16. added precipitation and weather station modules
 17. added tobs and start/end date modules
+18-24. cleaning repo
+25. update readme
